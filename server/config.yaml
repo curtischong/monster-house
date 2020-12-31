@@ -1,0 +1,4 @@
+limitValidator:
+  dailyLoadFrequencyLimit: 3
+  dailyLoadAmountLimit: 5000
+  weeklyLoadAmountLimit: 20000
