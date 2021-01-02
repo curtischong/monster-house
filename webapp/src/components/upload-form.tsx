@@ -3,11 +3,12 @@ import ImageUploader from 'react-images-upload';
 import { Button, TagInput, AnchorButton } from '@blueprintjs/core';
 import { uploadPhotos } from '../request';
 
-interface IUploadFormProps {}
+interface IUploadFormProps {
+  onClose: () => void;
+}
 interface IUploadFormState {
   pictures: File[];
   tags: React.ReactNode[];
-  lastUploadDate: Date;
 }
 
 export class UploadForm extends React.Component<IUploadFormProps, IUploadFormState> {
@@ -16,7 +17,6 @@ export class UploadForm extends React.Component<IUploadFormProps, IUploadFormSta
     this.state = {
       pictures: [],
       tags: [],
-      lastUploadDate: new Date(0),
     };
     this.onDrop = this.onDrop.bind(this);
     this.onSubmit = this.onSubmit.bind(this);
@@ -55,19 +55,14 @@ export class UploadForm extends React.Component<IUploadFormProps, IUploadFormSta
     //let tags = this.getTags();
     this.handleClearTags();
     uploadPhotos(this.state.pictures);
-    this.setState({
-      lastUploadDate: new Date(),
-    });
+    this.props.onClose();
   }
 
   public render() {
-    const { lastUploadDate, tags } = this.state;
+    const { tags } = this.state;
     return (
       <>
         <ImageUploader
-          // Since the imageUploader doesn't have a clear function,
-          // we can clear it by updating the key
-          key={lastUploadDate.toISOString()}
           withIcon={true}
           withPreview={true}
           buttonText="Choose images"

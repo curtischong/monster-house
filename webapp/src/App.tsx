@@ -1,25 +1,44 @@
 import React from 'react';
-import logo from './logo.svg';
 import { UploadForm } from './components/upload-form';
+import { Button, Dialog } from '@blueprintjs/core';
 import './App.css';
 
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a className="App-link" href="https://reactjs.org" target="_blank" rel="noopener noreferrer">
-          Learn React
-        </a>
-      </header>
-      <div>
-        <UploadForm />
+interface IAppProps {}
+interface IAppState {
+  isUploadOverlayOpen: boolean;
+}
+
+class App extends React.Component<IAppProps, IAppState> {
+  constructor(props: any) {
+    super(props);
+    this.state = {
+      isUploadOverlayOpen: false,
+    };
+    this.toggleOverlay = this.toggleOverlay.bind(this);
+  }
+
+  public render() {
+    const { isUploadOverlayOpen } = this.state;
+    return (
+      <div className="App">
+        <header className="App-header">
+          <h1>Monster House</h1>
+        </header>
+        <div>
+          <Button text="Upload photos" onClick={this.toggleOverlay} />
+          <Dialog isOpen={isUploadOverlayOpen} onClose={this.toggleOverlay}>
+            <UploadForm onClose={this.toggleOverlay} />
+          </Dialog>
+        </div>
       </div>
-    </div>
-  );
+    );
+  }
+
+  toggleOverlay() {
+    this.setState({
+      isUploadOverlayOpen: !this.state.isUploadOverlayOpen,
+    });
+  }
 }
 
 export default App;
