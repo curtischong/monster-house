@@ -1,5 +1,6 @@
 import React from 'react';
 import logo from './logo.svg';
+import { UploadForm } from './components/upload-form';
 import './App.css';
 
 function App() {
@@ -14,6 +15,9 @@ function App() {
           Learn React
         </a>
       </header>
+      <div>
+        <UploadForm />
+      </div>
     </div>
   );
 }
