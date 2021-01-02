@@ -1,18 +1,23 @@
 package config
 
 import (
-	"io/ioutil"
 	"gopkg.in/yaml.v2"
+	"io/ioutil"
 )
 
-type Config struct {
-	LimitValidatorConfig LimitValidatorConfig `yaml:"limitValidator"`
+type AWSConfig struct {
+	S3BucketName string `yaml:"s3BucketName"`
+	S3Endpoint	string `yaml:"s3Endpoint"`
+	Region string `yaml:"region"`
 }
 
-type LimitValidatorConfig struct {
-	DailyLoadFrequencyLimit int   `yaml:"dailyLoadFrequencyLimit"`
-	DailyLoadAmountLimit    int64 `yaml:"dailyLoadAmountLimit"`
-	WeeklyLoadAmountLimit   int64 `yaml:"weeklyLoadAmountLimit"`
+type ServerConfig struct {
+	Port int `yaml:"port"`
+}
+
+type Config struct {
+	ServerConfig ServerConfig `yaml:"server"`
+	AWSConfig AWSConfig `yaml:"aws"`
 }
 
 func NewConfig(

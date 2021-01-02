@@ -2,9 +2,9 @@ package main
 
 import (
 	"./pkg/config"
-	"log"
 	"net/http"
 	"./pkg/request"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -17,8 +17,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("couldn't load pkg path=%s, err=%s", configPath, err.Error())
 	}
-	print(config)
-	requestHandler := request.NewRequestHandler()
+	requestHandler := request.NewRequestHandler(config)
 	http.HandleFunc("/upload", requestHandler.HandleUpload)
-	http.ListenAndServe(":8090", nil)
+	log.Info("Starting server on port 8090")
+
+	err = http.ListenAndServe(":8090", nil)
+	if err!= nil{
+		log.Fatalf("Cannot start server err=%s", err)
+	}
 }

@@ -1,4 +1,6 @@
-limitValidator:
-  dailyLoadFrequencyLimit: 3
-  dailyLoadAmountLimit: 5000
-  weeklyLoadAmountLimit: 20000
+aws:
+    s3BucketName: "monsterhouse"
+    region: "ap-northeast-1"
+    s3Endpoint: "http://localhost:4566"
+server:
+    port: 8090
