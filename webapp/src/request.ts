@@ -17,11 +17,12 @@ export let getAllPhotos = (callback: (photoUrls: string[]) => void) => {
     );
 };
 
-export let uploadPhotos = (files: File[]) => {
+export let uploadPhotos = (files: File[], tags: string[]) => {
   // we upload the photos individually so if one upload fails, the earlier uploads will still go through
   files.forEach((file) => {
     let formData = new FormData();
     formData.append('file', file, file.name);
+    formData.append('tags', JSON.stringify(tags));
     axios.post(baseURL + 'upload', formData, {
       headers: {
         'Content-Type': 'multipart/form-data',

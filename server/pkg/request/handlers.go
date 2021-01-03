@@ -1,15 +1,17 @@
 package request
 
 import (
+	"../config"
+	"../database"
+	"../storage"
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"mime/multipart"
 	"net/http"
 	"strings"
-	"../config"
-	"../storage"
-	"../database"
-)
+	"github.com/google/uuid"
+	)
 
 // TODO: Store s3Client
 type RequestHandler struct{
@@ -42,21 +44,79 @@ func (handler *RequestHandler) HandleGetAllPhotos(
 func (handler *RequestHandler) HandleUpload(
 	w http.ResponseWriter, r *http.Request,
 ) {
-	r.ParseMultipartForm(32 << 20) // limit your max input length!
-	file, header, err := r.FormFile("file")
+	// 1. Parse the file
+	file, fileName, fileType, err := handler.parseFile(r)
+	defer file.Close()
 	if err != nil {
 		handler.sendInternalServerError(w, err)
 	}
-	defer file.Close()
-	name := strings.Split(header.Filename, ".")
 
+	// 2. upload the file to S3
 	// TODO(Curtis): consider validating the fileType using: https://tika.apache.org/
-	fmt.Printf("File name %s\n", name[0])
-	fileType := name[1]
-	err = handler.s3Client.UploadFile(file, fileType)
-
+	log.Infof("storing file with name=%s", fileName)
+	photoID, err := handler.s3Client.UploadFile(file, fileType)
 	if err != nil{
 		handler.sendInternalServerError(w, err)
+	}
+
+	// 3. Insert the Photo metadata into the DB
+	err = handler.postgresClient.InsertPhoto(photoID, fileName, fileType)
+	if err != nil{
+		handler.sendInternalServerError(w, err)
+	}
+
+	// 3. Store the tags
+	tagIDs, err := handler.parseAndStoreTags(r)
+	if err != nil{
+		handler.sendInternalServerError(w, err)
+	}
+
+	// 4. store the photo-tag associations
+	err = handler.postgresClient.InsertPhotoTags(photoID, tagIDs, false)
+	if err != nil{
+		handler.sendInternalServerError(w, err)
+	}
+	return
+}
+
+func (handler *RequestHandler) parseFile(
+	r *http.Request,
+) (file multipart.File, fileName, fileType string, err error){
+
+	r.ParseMultipartForm(32 << 20) // limit your max input length!
+	file, header, err := r.FormFile("file")
+	if err != nil {
+		return
+	}
+	name := strings.Split(header.Filename, ".")
+	fileName = name[0]
+	fileType = name[1]
+	return
+}
+
+func (handler *RequestHandler) parseAndStoreTags(
+	r *http.Request,
+)(tagIDs []uuid.UUID, err error){
+	if formError := r.ParseForm(); formError != nil {
+		err = formError
+		return
+	}
+	tagsFormValue := r.PostForm["tags"]
+	if len(tagsFormValue) == 0{
+		// No tags
+		return nil, nil
+	}
+
+	tags := []string{}
+	json.Unmarshal([]byte(tagsFormValue[0]), &tags)
+
+	tagIDs = make([]uuid.UUID, 0, len(tags))
+	for _, tagName := range tags{
+		tagID, insertErr := handler.postgresClient.InsertTagIfNotExist(tagName)
+		if insertErr != nil{
+			return nil, fmt.Errorf("cannot insert tagName=%s, err=%s", tagName, insertErr)
+		}
+		tagIDs = append(tagIDs, tagID)
 	}
 	return
 }

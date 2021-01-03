@@ -45,20 +45,17 @@ func (client *S3Client) GetAllFileURLs()([]string, error){
 
 func (client *S3Client) UploadFile(
 	f io.ReadSeeker, fileType string,
-)error{
+)(fileID uuid.UUID, err error){
 	s3client := client.getS3Client()
-	result, err := s3client.PutObject(&s3.PutObjectInput{
+	fileID = uuid.New()
+	_, err = s3client.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(client.awsConfig.S3BucketName),
 		ContentType: aws.String(fileType),
 		ACL: aws.String("public-read"),
-		Key:    aws.String(uuid.New().String()),
+		Key:    aws.String(fileID.String()),
 		Body:   f,
 	})
-	if err != nil{
-		return err
-	}
-	print(result)
-	return nil
+	return
 }
 
 func (client *S3Client) getS3Client()*s3.S3{

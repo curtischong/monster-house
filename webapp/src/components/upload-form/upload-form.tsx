@@ -52,9 +52,9 @@ export class UploadForm extends React.Component<IUploadFormProps, IUploadFormSta
   };
 
   onSubmit() {
-    //let tags = this.getTags();
+    const tags = this.getTags();
     this.handleClearTags();
-    uploadPhotos(this.state.pictures);
+    uploadPhotos(this.state.pictures, tags);
     this.props.onClose();
   }
 
