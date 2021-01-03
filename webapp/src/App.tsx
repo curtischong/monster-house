@@ -4,6 +4,7 @@ import './App.css';
 import { getAllPhotos } from './request';
 import { Image } from './components/image/image';
 import { UploadForm } from './components/upload-form/upload-form';
+import { SearchField } from './components/search-field/search-field';
 import { IImageData } from './common';
 
 interface IAppProps {}
@@ -35,6 +36,7 @@ class App extends React.Component<IAppProps, IAppState> {
         </header>
         <div>
           <Button text="Upload photos" onClick={this.toggleOverlay} />
+          <SearchField setPhotos={this.setPhotos} />
           <Dialog isOpen={isUploadOverlayOpen} onClose={this.toggleOverlay}>
             <UploadForm onClose={this.toggleOverlay} />
           </Dialog>

@@ -18,6 +18,7 @@ func main() {
 		log.Fatalf("couldn't load pkg path=%s, err=%s", configPath, err.Error())
 	}
 	requestHandler := request.NewRequestHandler(config)
+	http.HandleFunc("/get-photos", requestHandler.HandleGetPhotos)
 	http.HandleFunc("/get-all-photos", requestHandler.HandleGetAllPhotos)
 	http.HandleFunc("/upload", requestHandler.HandleUpload)
 	log.Info("Starting server on port 8090")

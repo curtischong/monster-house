@@ -76,6 +76,34 @@ func (client *PostgresClient) QueryAllTagsForPhoto(
 	return
 }
 
+func (client *PostgresClient) QueryAllPhotosWithTag(
+	tag string,
+)(photos []uuid.UUID, err error){
+	query := `
+	WITH tag_ids AS (
+		SELECT id FROM tag
+		WHERE name LIKE $1
+	)
+	SELECT photo_id FROM tag_ids JOIN photo_tag ON (tag_ids.id = photo_tag.tag_id);
+	`
+
+	tx := client.db.MustBegin()
+	rows, err := tx.Query(query, tag)
+	if err != nil{
+		return
+	}
+	photos = make([]uuid.UUID, 0)
+	for rows.Next(){
+		var photoID uuid.UUID
+		err = rows.Scan(&photoID)
+		if err != nil{
+			return nil, err
+		}
+		photos = append(photos, photoID)
+	}
+	return
+}
+
 
 func (client *PostgresClient) InsertPhoto(
 	photoID uuid.UUID,

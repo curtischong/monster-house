@@ -4,14 +4,15 @@ import (
 	"../config"
 	"../database"
 	"../storage"
+	"../utils"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"mime/multipart"
 	"net/http"
 	"strings"
-	"github.com/google/uuid"
-	)
+)
 
 type PhotoReponseData struct{
 	ID string
@@ -19,7 +20,8 @@ type PhotoReponseData struct{
 	Tags []string
 }
 
-// TODO: Store s3Client
+// TODO: Fix up request handling
+// https://stackoverflow.com/questions/43799703/how-to-do-error-http-error-handling-in-go-language
 type RequestHandler struct{
 	config *config.Config
 	s3Client *storage.S3Client
@@ -36,6 +38,32 @@ func NewRequestHandler(
 	}
 }
 
+func (handler *RequestHandler) HandleGetPhotos(
+	w http.ResponseWriter, r *http.Request,
+){
+	// TODO(Curtis): put this validation code into a validator function
+	query := r.URL.Query()["query"]
+	if len(query) != 1 {
+		handler.sendStatusBadRequest(w, fmt.Errorf("multiple queries found in query"))
+		return
+	}
+	tags := strings.Split(query[0], ",")
+
+	photosIDsFound := make(map[uuid.UUID]bool, 0)
+	for _, tag := range tags{
+		photoIDs, err := handler.postgresClient.QueryAllPhotosWithTag(tag)
+		if err != nil{
+			handler.sendInternalServerError(w, err)
+			return
+		}
+		for _, photoID := range photoIDs{
+			photosIDsFound[photoID] = true
+		}
+	}
+	photoIDs := utils.GetArrayOfUUIDFromMapOfUUID(photosIDsFound)
+	handler.writePhotoResponseDataFromPhotoIDs(w, photoIDs)
+}
+
 func (handler *RequestHandler) HandleGetAllPhotos(
 	w http.ResponseWriter, r *http.Request,
 ){
@@ -43,8 +71,15 @@ func (handler *RequestHandler) HandleGetAllPhotos(
 	if err != nil{
 		handler.sendInternalServerError(w, err)
 	}
-	allPhotos := make([]PhotoReponseData, 0, len(allPhotoIDs))
-	for _, photoID := range allPhotoIDs{
+	handler.writePhotoResponseDataFromPhotoIDs(w, allPhotoIDs)
+}
+
+func(handler *RequestHandler) writePhotoResponseDataFromPhotoIDs(
+	w http.ResponseWriter,
+	photoIDs []uuid.UUID,
+){
+	allPhotos := make([]PhotoReponseData, 0, len(photoIDs))
+	for _, photoID := range photoIDs{
 		photoReponseData, err := handler.getPhotoReponseData(photoID)
 		if err != nil{
 			handler.sendInternalServerError(w, err)
@@ -83,6 +118,7 @@ func (handler *RequestHandler) HandleUpload(
 	defer file.Close()
 	if err != nil {
 		handler.sendInternalServerError(w, err)
+		return
 	}
 
 	// 2. upload the file to S3
@@ -91,18 +127,21 @@ func (handler *RequestHandler) HandleUpload(
 	photoID, err := handler.s3Client.UploadFile(file, fileType)
 	if err != nil{
 		handler.sendInternalServerError(w, err)
+		return
 	}
 
 	// 3. Insert the Photo metadata into the DB
 	err = handler.postgresClient.InsertPhoto(photoID, fileName, fileType)
 	if err != nil{
 		handler.sendInternalServerError(w, err)
+		return
 	}
 
 	// 3. Store the tags
 	tagIDs, err := handler.parseAndStoreTags(r)
 	if err != nil{
 		handler.sendInternalServerError(w, err)
+		return
 	}
 
 	// 4. store the photo-tag associations
@@ -170,5 +209,15 @@ func (handler *RequestHandler) sendInternalServerError(
 	handler.sendStandardHeaders(w)
 	log.Error(err)
 	w.WriteHeader(http.StatusInternalServerError)
+	return
+}
+
+func (handler *RequestHandler) sendStatusBadRequest(
+	w http.ResponseWriter,
+	err error,
+){
+	handler.sendStandardHeaders(w)
+	log.Error(err)
+	w.WriteHeader(http.StatusBadRequest)
 	return
 }
