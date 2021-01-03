@@ -4,11 +4,12 @@ import './App.css';
 import { getAllPhotos } from './request';
 import { Image } from './components/image/image';
 import { UploadForm } from './components/upload-form/upload-form';
+import { IImageData } from './common';
 
 interface IAppProps {}
 interface IAppState {
   isUploadOverlayOpen: boolean;
-  imageUrls: string[];
+  allImageData: IImageData[];
 }
 
 class App extends React.Component<IAppProps, IAppState> {
@@ -16,7 +17,7 @@ class App extends React.Component<IAppProps, IAppState> {
     super(props);
     this.state = {
       isUploadOverlayOpen: false,
-      imageUrls: [],
+      allImageData: [],
     };
     this.toggleOverlay = this.toggleOverlay.bind(this);
     this.setPhotos = this.setPhotos.bind(this);
@@ -25,8 +26,8 @@ class App extends React.Component<IAppProps, IAppState> {
   }
 
   public render() {
-    const { isUploadOverlayOpen, imageUrls } = this.state;
-    const photos = this.generatePhotos(imageUrls);
+    const { isUploadOverlayOpen, allImageData } = this.state;
+    const photos = this.generatePhotos(allImageData);
     return (
       <div className="App">
         <header className="App-header">
@@ -43,17 +44,17 @@ class App extends React.Component<IAppProps, IAppState> {
     );
   }
 
-  generatePhotos(imageUrls: string[]): JSX.Element[] {
+  generatePhotos(allImageData: IImageData[]): JSX.Element[] {
     let images: JSX.Element[] = [];
-    for (let i = 0; i < imageUrls.length; i++) {
-      images.push(<Image key={i} url={imageUrls[i]}></Image>);
+    for (let i = 0; i < allImageData.length; i++) {
+      images.push(<Image key={i} imageData={allImageData[i]}></Image>);
     }
     return images;
   }
 
-  setPhotos(imageUrls: string[]) {
+  setPhotos(allImageData: IImageData[]) {
     this.setState({
-      imageUrls: imageUrls,
+      allImageData: allImageData,
     });
   }
 

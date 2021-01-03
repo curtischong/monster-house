@@ -1,13 +1,15 @@
 import axios from 'axios';
+import { IImageData } from './common';
 const baseURL = 'http://localhost:8090/';
 
-export let getAllPhotos = (callback: (photoUrls: string[]) => void) => {
+export let getAllPhotos = (callback: (allImageData: IImageData[]) => void) => {
   axios
     .get(baseURL + 'get-all-photos', {
       headers: {},
     })
     .then(
       (response) => {
+        console.log(response);
         callback(response.data);
       },
       (error) => {

@@ -13,8 +13,15 @@ import (
 	"github.com/google/uuid"
 	)
 
+type PhotoReponseData struct{
+	ID string
+	Url string
+	Tags []string
+}
+
 // TODO: Store s3Client
 type RequestHandler struct{
+	config *config.Config
 	s3Client *storage.S3Client
 	postgresClient *database.PostgresClient
 }
@@ -23,6 +30,7 @@ func NewRequestHandler(
 	config *config.Config	,
 ) *RequestHandler{
 	return &RequestHandler{
+		config: config,
 		s3Client:       storage.NewS3Client(config),
 		postgresClient: database.NewPostgresClient(config),
 	}
@@ -31,13 +39,39 @@ func NewRequestHandler(
 func (handler *RequestHandler) HandleGetAllPhotos(
 	w http.ResponseWriter, r *http.Request,
 ){
-	fileUrls , err := handler.s3Client.GetAllFileURLs()
+	allPhotoIDs, err := handler.postgresClient.QueryAllPhotoIDs()
 	if err != nil{
 		handler.sendInternalServerError(w, err)
 	}
-	fileUrlsBytes, _ := json.Marshal(fileUrls)
+	allPhotos := make([]PhotoReponseData, 0, len(allPhotoIDs))
+	for _, photoID := range allPhotoIDs{
+		photoReponseData, err := handler.getPhotoReponseData(photoID)
+		if err != nil{
+			handler.sendInternalServerError(w, err)
+		}
+		allPhotos = append(allPhotos, photoReponseData)
+	}
+	fileUrlsBytes, _ := json.Marshal(allPhotos)
 	handler.sendStandardHeaders(w)
 	w.Write(fileUrlsBytes)
+}
+
+func (handler *RequestHandler) getPhotoReponseData(
+	photoID uuid.UUID,
+)(PhotoReponseData, error){
+	fileUrl := fmt.Sprintf("%s/%s/%s",handler.config.AWSConfig.S3Endpoint,
+		handler.config.AWSConfig.S3BucketName, photoID)
+
+	allTags, err := handler.postgresClient.QueryAllTagsForPhoto(photoID)
+	if err != nil{
+		return PhotoReponseData{}, err
+	}
+
+	return PhotoReponseData{
+		ID: photoID.String(),
+		Url: fileUrl,
+		Tags: allTags,
+	}, nil
 }
 
 // from: https://stackoverflow.com/questions/40684307/how-can-i-receive-an-uploaded-file-using-a-golang-net-http-server

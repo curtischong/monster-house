@@ -1,4 +1,17 @@
-.image {
+.image-container {
     max-width: 300px;
-    height: 20px;
+}
+
+.tags-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.tag {
+    background-color: #f7d4fa;
+    border: 1px solid #e271eb;
+    border-radius: 5px;
+    margin: 2px;
+    padding-left: 2px;
+    padding-right: 2px;
 }
