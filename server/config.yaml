@@ -2,5 +2,9 @@ aws:
     s3BucketName: "monsterhouse"
     region: "ap-northeast-1"
     s3Endpoint: "http://localhost:4566"
+database:
+    username: "curtis"
+    password: "house"
+    dbname: "monsterhouse"
 server:
     port: 8090

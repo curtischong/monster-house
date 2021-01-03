@@ -1,32 +1,35 @@
 package request
 
 import (
-	"../config"
-	"../storage"
 	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
+	"../config"
+	"../storage"
+	"../database"
 )
 
-// TODO: Store s3client
+// TODO: Store s3Client
 type RequestHandler struct{
-	s3client *storage.S3Client
+	s3Client *storage.S3Client
+	postgresClient *database.PostgresClient
 }
 
 func NewRequestHandler(
 	config *config.Config	,
 ) *RequestHandler{
 	return &RequestHandler{
-		s3client: storage.NewS3Client(config),
+		s3Client:       storage.NewS3Client(config),
+		postgresClient: database.NewPostgresClient(config),
 	}
 }
 
 func (handler *RequestHandler) HandleGetAllPhotos(
 	w http.ResponseWriter, r *http.Request,
 ){
-	fileUrls , err := handler.s3client.GetAllFileURLs()
+	fileUrls , err := handler.s3Client.GetAllFileURLs()
 	if err != nil{
 		handler.sendInternalServerError(w, err)
 	}
@@ -50,7 +53,7 @@ func (handler *RequestHandler) HandleUpload(
 	// TODO(Curtis): consider validating the fileType using: https://tika.apache.org/
 	fmt.Printf("File name %s\n", name[0])
 	fileType := name[1]
-	err = handler.s3client.UploadFile(file, fileType)
+	err = handler.s3Client.UploadFile(file, fileType)
 
 	if err != nil{
 		handler.sendInternalServerError(w, err)

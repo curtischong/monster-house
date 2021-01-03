@@ -14,10 +14,16 @@ type AWSConfig struct {
 type ServerConfig struct {
 	Port int `yaml:"port"`
 }
+type DatabaseConfig struct {
+	Username string `yaml:"username"`
+	Password string `yaml:"password"`
+	DBName string `yaml:"dbname"`
+}
 
 type Config struct {
 	ServerConfig ServerConfig `yaml:"server"`
 	AWSConfig AWSConfig `yaml:"aws"`
+	DatabaseConfig DatabaseConfig `yaml:"database"`
 }
 
 func NewConfig(
