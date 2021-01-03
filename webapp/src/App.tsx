@@ -2,6 +2,7 @@ import React from 'react';
 import { UploadForm } from './components/upload-form';
 import { Button, Dialog } from '@blueprintjs/core';
 import './App.css';
+import { getAllPhotos } from './request';
 
 interface IAppProps {}
 interface IAppState {
@@ -15,6 +16,7 @@ class App extends React.Component<IAppProps, IAppState> {
       isUploadOverlayOpen: false,
     };
     this.toggleOverlay = this.toggleOverlay.bind(this);
+    getAllPhotos();
   }
 
   public render() {

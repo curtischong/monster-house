@@ -2,6 +2,7 @@ package storage
 
 import (
 	"../config"
+	"fmt"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -21,27 +22,35 @@ func NewS3Client(
 	}
 }
 
-func (client *S3Client) GetAllFileURLs(){
-
-}
-
-func (client *S3Client) GetNewSession()*session.Session{
-	awsConfig := &aws.Config{
-		Region: aws.String(client.awsConfig.Region),
-		Endpoint: aws.String(client.awsConfig.S3Endpoint),
-		S3ForcePathStyle: aws.Bool(true),
+func (client *S3Client) GetAllFileURLs()([]string, error){
+	s3client := client.getS3Client()
+	// 1) Get all of the objects in our bucket
+	result, err := s3client.ListObjects(&s3.ListObjectsInput{
+		Bucket: aws.String(client.awsConfig.S3BucketName),
+	})
+	if err != nil{
+		return nil, err
 	}
-	return session.Must(session.NewSession(awsConfig))
+	fileUrls := make([]string, len(result.Contents))
+	for i, fileContent := range result.Contents{
+		if fileContent.Key == nil{
+			continue
+		}
+		fileUrl := fmt.Sprintf("%s/%s/%s",client.awsConfig.S3Endpoint,
+			client.awsConfig.S3BucketName, *fileContent.Key)
+		fileUrls[i] = fileUrl
+	}
+	return fileUrls, nil
 }
 
 func (client *S3Client) UploadFile(
-	f io.ReadSeeker,
+	f io.ReadSeeker, fileType string,
 )error{
-	sess := client.GetNewSession()
-	// Create an uploader with the session and default options
-	s3client := s3.New(sess)
+	s3client := client.getS3Client()
 	result, err := s3client.PutObject(&s3.PutObjectInput{
 		Bucket: aws.String(client.awsConfig.S3BucketName),
+		ContentType: aws.String(fileType),
+		ACL: aws.String("public-read"),
 		Key:    aws.String(uuid.New().String()),
 		Body:   f,
 	})
@@ -50,4 +59,13 @@ func (client *S3Client) UploadFile(
 	}
 	print(result)
 	return nil
+}
+
+func (client *S3Client) getS3Client()*s3.S3{
+	awsConfig := &aws.Config{
+		Region: aws.String(client.awsConfig.Region),
+		Endpoint: aws.String(client.awsConfig.S3Endpoint),
+		S3ForcePathStyle: aws.Bool(true),
+	}
+	return s3.New(session.Must(session.NewSession(awsConfig)))
 }

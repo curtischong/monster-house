@@ -1,6 +1,22 @@
 import axios from 'axios';
 const baseURL = 'http://localhost:8090/';
 
+export let getAllPhotos = () => {
+  axios
+    .get(baseURL + 'get-all-photos', {
+      headers: {},
+    })
+    .then(
+      (response) => {
+        console.log(response);
+      },
+      (error) => {
+        // consider using a toaster popup
+        console.log(error);
+      },
+    );
+};
+
 export let uploadPhotos = (files: File[]) => {
   // we upload the photos individually so if one upload fails, the earlier uploads will still go through
   files.forEach((file) => {

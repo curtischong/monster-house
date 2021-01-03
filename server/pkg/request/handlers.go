@@ -3,10 +3,11 @@ package request
 import (
 	"../config"
 	"../storage"
+	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"strings"
-	log "github.com/sirupsen/logrus"
 )
 
 // TODO: Store s3client
@@ -22,6 +23,18 @@ func NewRequestHandler(
 	}
 }
 
+func (handler *RequestHandler) HandleGetAllPhotos(
+	w http.ResponseWriter, r *http.Request,
+){
+	fileUrls , err := handler.s3client.GetAllFileURLs()
+	if err != nil{
+		handler.sendInternalServerError(w, err)
+	}
+	fileUrlsBytes, _ := json.Marshal(fileUrls)
+	handler.sendStandardHeaders(w)
+	w.Write(fileUrlsBytes)
+}
+
 // from: https://stackoverflow.com/questions/40684307/how-can-i-receive-an-uploaded-file-using-a-golang-net-http-server
 func (handler *RequestHandler) HandleUpload(
 	w http.ResponseWriter, r *http.Request,
@@ -33,8 +46,11 @@ func (handler *RequestHandler) HandleUpload(
 	}
 	defer file.Close()
 	name := strings.Split(header.Filename, ".")
+
+	// TODO(Curtis): consider validating the fileType using: https://tika.apache.org/
 	fmt.Printf("File name %s\n", name[0])
-	err = handler.s3client.UploadFile(file)
+	fileType := name[1]
+	err = handler.s3client.UploadFile(file, fileType)
 
 	if err != nil{
 		handler.sendInternalServerError(w, err)
@@ -42,14 +58,20 @@ func (handler *RequestHandler) HandleUpload(
 	return
 }
 
+func (handler *RequestHandler) sendStandardHeaders(
+	w http.ResponseWriter,
+){
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+}
+
 func (handler *RequestHandler) sendInternalServerError(
 	w http.ResponseWriter,
 	err error,
 ){
+	handler.sendStandardHeaders(w)
 	log.Error(err)
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
 	w.WriteHeader(http.StatusInternalServerError)
 	return
 }
