@@ -8,3 +8,4 @@ database:
     dbname: "monsterhouse"
 server:
     port: 8090
+    ngrokURL: "https://cd6017426bf0.ngrok.io"

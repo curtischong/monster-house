@@ -1,29 +1,28 @@
 # monster-house
 
-# Run locally
+Thanks for looking at my submission! I called my image repository "Monster House" because it consumes images like
+there's no tomorrow.
 
-1. run the persistent localstack instance running to mock aws
-   `cd server && docker-compose up`
-2. In another terminal pane, start the go server
-   `cd server && go run main.go`
-3. In another terminal pane, start the webapp
+# Steps to Run Locally
+
+1. In a terminal pane, start the webapp
    `cd webapp && yarn start`
 
-planning:
+2. run the persistent localstack instance running to mock aws
+   `cd server && docker-compose up`
 
-- I want to host localstack on docker
-  - I'll use s3 to store the images
-  - I have to build an s3 client
+Now we have to spin up an ngrok instance to properly expose our locally-stored files to
+the imagga API
 
-I want to test that uploading and everything works
+3. Start ngrok in another terminal
+   `./ngrok http 4566`
 
-- upload to localstack and see if permissions work and everything
+4. copy the ngrok url into the `ngrokURL` variable in `config.yaml`:
+   The url should look like: `https://cd6017426bf0.ngrok.io`
 
-The question: command line or webui
+5. In another terminal pane, start the go server
+   `cd server && go run main.go`
 
-if webui, it'll be a react app communicating with the backend
+# Testing
 
-- I can setup graphql but I'm lazy
-- Just rest is enough
-
-docker pull localstack/localstack
+Sorry for not writing any tests. It's my last week of work and I'm trying to close up my tickets.

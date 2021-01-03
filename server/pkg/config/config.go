@@ -1,28 +1,30 @@
 package config
 
 import (
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
+
+	yaml "gopkg.in/yaml.v2"
 )
 
 type AWSConfig struct {
 	S3BucketName string `yaml:"s3BucketName"`
-	S3Endpoint	string `yaml:"s3Endpoint"`
-	Region string `yaml:"region"`
+	S3Endpoint   string `yaml:"s3Endpoint"`
+	Region       string `yaml:"region"`
 }
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port     int    `yaml:"port"`
+	NgrokURL string `yaml:"ngrokURL"`
 }
 type DatabaseConfig struct {
 	Username string `yaml:"username"`
 	Password string `yaml:"password"`
-	DBName string `yaml:"dbname"`
+	DBName   string `yaml:"dbname"`
 }
 
 type Config struct {
-	ServerConfig ServerConfig `yaml:"server"`
-	AWSConfig AWSConfig `yaml:"aws"`
+	ServerConfig   ServerConfig   `yaml:"server"`
+	AWSConfig      AWSConfig      `yaml:"aws"`
 	DatabaseConfig DatabaseConfig `yaml:"database"`
 }
 
