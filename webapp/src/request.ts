@@ -1,14 +1,14 @@
 import axios from 'axios';
 const baseURL = 'http://localhost:8090/';
 
-export let getAllPhotos = () => {
+export let getAllPhotos = (callback: (photoUrls: string[]) => void) => {
   axios
     .get(baseURL + 'get-all-photos', {
       headers: {},
     })
     .then(
       (response) => {
-        console.log(response);
+        callback(response.data);
       },
       (error) => {
         // consider using a toaster popup

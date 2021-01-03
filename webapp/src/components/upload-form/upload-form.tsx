@@ -1,7 +1,7 @@
 import React from 'react';
 import ImageUploader from 'react-images-upload';
 import { Button, TagInput, AnchorButton } from '@blueprintjs/core';
-import { uploadPhotos } from '../request';
+import { uploadPhotos } from '../../request';
 
 interface IUploadFormProps {
   onClose: () => void;
