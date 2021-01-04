@@ -8,10 +8,18 @@ interface IImageProps {
 export const Image = (props: IImageProps) => {
   let tags: JSX.Element[] = [];
   for (let i = 0; i < props.imageData.Tags.length; i++) {
-    const tagName = props.imageData.Tags[i];
+    const { Name, IsGenerated } = props.imageData.Tags[i];
+
+    let className = 'tag';
+    if (IsGenerated) {
+      className += ' generated-tag';
+    } else {
+      className += ' user-tag';
+    }
+
     tags.push(
-      <div key={i} className="tag">
-        {tagName}
+      <div key={i} className={className}>
+        {Name}
       </div>,
     );
   }

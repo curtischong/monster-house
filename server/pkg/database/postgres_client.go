@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 
+	"../common"
 	"../config"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
@@ -51,13 +52,13 @@ func (client *PostgresClient) QueryAllPhotoIDs() (allIDs []uuid.UUID, err error)
 
 func (client *PostgresClient) QueryAllTagsForPhoto(
 	photoID uuid.UUID,
-) (allTags []string, err error) {
+) (allTags []common.TagResponseData, err error) {
 	query := `
 	WITH tag_ids AS (
-		SELECT tag_id FROM photo_tag
+		SELECT tag_id, is_auto_generated FROM photo_tag
 		WHERE photo_id=$1
 	)
-	SELECT name FROM tag_ids JOIN tag ON (tag_ids.tag_id=tag.id);
+	SELECT name, is_auto_generated FROM tag_ids JOIN tag ON (tag_ids.tag_id=tag.id);
 	`
 
 	tx := client.db.MustBegin()
@@ -65,14 +66,19 @@ func (client *PostgresClient) QueryAllTagsForPhoto(
 	if err != nil {
 		return
 	}
-	allTags = make([]string, 0)
+	allTags = make([]common.TagResponseData, 0)
 	for rows.Next() {
 		var tagName string
-		err = rows.Scan(&tagName)
+		var isGenerated bool
+		err = rows.Scan(&tagName, &isGenerated)
 		if err != nil {
 			return nil, err
 		}
-		allTags = append(allTags, tagName)
+		tagResponseData := common.TagResponseData{
+			Name:        tagName,
+			IsGenerated: isGenerated,
+		}
+		allTags = append(allTags, tagResponseData)
 	}
 	return
 }

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"../common"
 	"../config"
 	"../database"
 	"../storage"
@@ -15,12 +16,6 @@ import (
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 )
-
-type PhotoReponseData struct {
-	ID   string
-	Url  string
-	Tags []string
-}
 
 // TODO: Fix up request handling
 // https://stackoverflow.com/questions/43799703/how-to-do-error-http-error-handling-in-go-language
@@ -82,7 +77,7 @@ func (handler *RequestHandler) writePhotoResponseDataFromPhotoIDs(
 	w http.ResponseWriter,
 	photoIDs []uuid.UUID,
 ) {
-	allPhotos := make([]PhotoReponseData, 0, len(photoIDs))
+	allPhotos := make([]common.PhotoReponseData, 0, len(photoIDs))
 	for _, photoID := range photoIDs {
 		photoReponseData, err := handler.getPhotoReponseData(photoID)
 		if err != nil {
@@ -97,16 +92,16 @@ func (handler *RequestHandler) writePhotoResponseDataFromPhotoIDs(
 
 func (handler *RequestHandler) getPhotoReponseData(
 	photoID uuid.UUID,
-) (PhotoReponseData, error) {
+) (common.PhotoReponseData, error) {
 	fileUrl := fmt.Sprintf("%s/%s/%s", handler.config.AWSConfig.S3Endpoint,
 		handler.config.AWSConfig.S3BucketName, photoID)
 
 	allTags, err := handler.postgresClient.QueryAllTagsForPhoto(photoID)
 	if err != nil {
-		return PhotoReponseData{}, err
+		return common.PhotoReponseData{}, err
 	}
 
-	return PhotoReponseData{
+	return common.PhotoReponseData{
 		ID:   photoID.String(),
 		Url:  fileUrl,
 		Tags: allTags,

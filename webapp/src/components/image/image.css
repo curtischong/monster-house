@@ -8,10 +8,18 @@
 }
 
 .tag {
-    background-color: #f7d4fa;
-    border: 1px solid #e271eb;
     border-radius: 5px;
     margin: 2px;
     padding-left: 2px;
     padding-right: 2px;
+}
+
+.user-tag {
+    background-color: #f7d4fa;
+    border: 1px solid #e271eb;
+}
+
+.generated-tag {
+    background-color: #bce8cf;
+    border: solid 1px mediumseagreen;
 }
