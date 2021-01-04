@@ -141,15 +141,38 @@ func (handler *RequestHandler) HandleUpload(
 		return
 	}
 
-	// 3. Store the tags
-	tagIDs, err := handler.parseAndStoreTags(r)
+	userTags, err := handler.parseTagsFromRequest(r)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
 		return
 	}
 
-	// 4. store the photo-tag associations
-	err = handler.postgresClient.InsertPhotoTags(photoID, tagIDs, false)
+	// 4. Fetch the calculated tags from imagga
+	generatedTags, err := handler.imaggaClient.GetTagsForPhoto(photoID)
+	if err != nil {
+		handler.sendInternalServerError(w, err)
+		return
+	}
+
+	userTagIDs, err := handler.insertTagsAndGetTagIDs(userTags)
+	if err != nil {
+		handler.sendInternalServerError(w, err)
+		return
+	}
+
+	generatedTagIDs, err := handler.insertTagsAndGetTagIDs(generatedTags)
+	if err != nil {
+		handler.sendInternalServerError(w, err)
+		return
+	}
+
+	// 5. store the photo-tag associations
+	err = handler.postgresClient.InsertPhotoTags(photoID, userTagIDs, false)
+	if err != nil {
+		handler.sendInternalServerError(w, err)
+	}
+	// 6. store the generated photo-tag associations
+	err = handler.postgresClient.InsertPhotoTags(photoID, generatedTagIDs, true)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
 	}
@@ -171,12 +194,11 @@ func (handler *RequestHandler) parseFile(
 	return
 }
 
-func (handler *RequestHandler) parseAndStoreTags(
+func (handler *RequestHandler) parseTagsFromRequest(
 	r *http.Request,
-) (tagIDs []uuid.UUID, err error) {
+) ([]string, error) {
 	if formError := r.ParseForm(); formError != nil {
-		err = formError
-		return
+		return nil, formError
 	}
 	tagsFormValue := r.PostForm["tags"]
 	if len(tagsFormValue) == 0 {
@@ -186,6 +208,12 @@ func (handler *RequestHandler) parseAndStoreTags(
 
 	tags := []string{}
 	json.Unmarshal([]byte(tagsFormValue[0]), &tags)
+	return tags, nil
+}
+
+func (handler *RequestHandler) insertTagsAndGetTagIDs(
+	tags []string,
+) (tagIDs []uuid.UUID, err error) {
 
 	tagIDs = make([]uuid.UUID, 0, len(tags))
 	for _, tagName := range tags {

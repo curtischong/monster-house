@@ -1,19 +1,21 @@
 package main
 
 import (
-	"./pkg/config"
 	"net/http"
+
+	"./pkg/config"
 	"./pkg/request"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	configPath  = "./config.yaml"
+	configPath  = "./config.yml"
+	secretsPath = "./secrets.yml"
 )
 
 func main() {
 	// If this was a real application configurations should passed into our services via dependency injection
-	config, err := config.NewConfig(configPath)
+	config, err := config.NewConfig(configPath, secretsPath)
 	if err != nil {
 		log.Fatalf("couldn't load pkg path=%s, err=%s", configPath, err.Error())
 	}
@@ -24,7 +26,7 @@ func main() {
 	log.Info("Starting server on port 8090")
 
 	err = http.ListenAndServe(":8090", nil)
-	if err!= nil{
+	if err != nil {
 		log.Fatalf("Cannot start server err=%s", err)
 	}
 }

@@ -13,8 +13,9 @@ type AWSConfig struct {
 }
 
 type ServerConfig struct {
-	Port     int    `yaml:"port"`
-	NgrokURL string `yaml:"ngrokURL"`
+	Port                  int    `yaml:"port"`
+	NgrokURL              string `yaml:"ngrokURL"`
+	UseNBestGeneratedTags int    `yaml:"useNBestGeneratedTags"`
 }
 type DatabaseConfig struct {
 	Username string `yaml:"username"`
@@ -26,19 +27,33 @@ type Config struct {
 	ServerConfig   ServerConfig   `yaml:"server"`
 	AWSConfig      AWSConfig      `yaml:"aws"`
 	DatabaseConfig DatabaseConfig `yaml:"database"`
+	SecretsConfig  SecretsConfig
+}
+
+type SecretsConfig struct {
+	ImaggaUser   string `yaml:"imaggaUser"`
+	ImaggaSecret string `yaml:"imaggaSecret"`
 }
 
 func NewConfig(
-	filepath string,
+	configPath, secretsPath string,
 ) (*Config, error) {
-	yamlFile, err := ioutil.ReadFile(filepath)
+	configFile, err := ioutil.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
 	var config Config
-	err = yaml.Unmarshal(yamlFile, &config)
+	err = yaml.Unmarshal(configFile, &config)
 	if err != nil {
 		return nil, err
 	}
+
+	secretsFile, err := ioutil.ReadFile(secretsPath)
+	var secretsConfig SecretsConfig
+	err = yaml.Unmarshal(secretsFile, &secretsConfig)
+	if err != nil {
+		return nil, err
+	}
+	config.SecretsConfig = secretsConfig
 	return &config, nil
 }
