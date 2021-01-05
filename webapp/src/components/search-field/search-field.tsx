@@ -23,6 +23,12 @@ export class SearchField extends React.Component<ISearchFieldProps, ISearchField
   handleChange(event: React.ChangeEvent<HTMLInputElement>) {
     this.setState({ value: event.target.value });
   }
+
+  /**
+   * Sends the search query to the server when "Enter" is pressed
+   * @remarks
+   * If the search box is empty and "Enter" is pressed, we will fetch all images from the database
+   */
   keyPress(event: React.KeyboardEvent<HTMLInputElement>) {
     if (event.key === 'Enter') {
       if (this.state.value === '') {

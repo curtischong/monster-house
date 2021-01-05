@@ -4,6 +4,8 @@ import (
 	"github.com/google/uuid"
 )
 
+// GetArrayOfUUIDFromMapOfUUID returns an array of UUID
+// for every UUID in the given map
 func GetArrayOfUUIDFromMapOfUUID(
 	IDs map[uuid.UUID]bool,
 ) []uuid.UUID {

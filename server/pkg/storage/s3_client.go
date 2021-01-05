@@ -1,7 +1,6 @@
 package storage
 
 import (
-	"fmt"
 	"io"
 
 	"../config"
@@ -21,27 +20,6 @@ func NewS3Client(
 	return &S3Client{
 		awsConfig: config.AWSConfig,
 	}
-}
-
-func (client *S3Client) GetAllFileURLs() ([]string, error) {
-	s3client := client.getS3Client()
-	// 1) Get all of the objects in our bucket
-	result, err := s3client.ListObjects(&s3.ListObjectsInput{
-		Bucket: aws.String(client.awsConfig.S3BucketName),
-	})
-	if err != nil {
-		return nil, err
-	}
-	fileUrls := make([]string, len(result.Contents))
-	for i, fileContent := range result.Contents {
-		if fileContent.Key == nil {
-			continue
-		}
-		fileUrl := fmt.Sprintf("%s/%s/%s", client.awsConfig.S3Endpoint,
-			client.awsConfig.S3BucketName, *fileContent.Key)
-		fileUrls[i] = fileUrl
-	}
-	return fileUrls, nil
 }
 
 func (client *S3Client) UploadFile(

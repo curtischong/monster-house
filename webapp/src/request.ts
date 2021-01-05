@@ -1,7 +1,10 @@
-import axios from 'axios';
+import axios, { AxiosResponse } from 'axios';
 import { IImageData } from './common';
 const baseURL = 'http://localhost:8090/';
 
+/**
+ * Fetches photos from the database that contains at least one tag specified in the query
+ */
 export let getPhotos = (query: string, callback: (allImageData: IImageData[]) => void) => {
   axios
     .get(baseURL + 'get-photos', {
@@ -21,6 +24,9 @@ export let getPhotos = (query: string, callback: (allImageData: IImageData[]) =>
     );
 };
 
+/**
+ * Fetches all photos from the database
+ */
 export let getAllPhotos = (callback: (allImageData: IImageData[]) => void) => {
   axios
     .get(baseURL + 'get-all-photos', {
@@ -37,10 +43,13 @@ export let getAllPhotos = (callback: (allImageData: IImageData[]) => void) => {
     );
 };
 
+/**
+ * Uploads the photos to the server
+ * @remarks
+ * We upload the photos individually so if one upload fails, the earlier uploads will still go through
+ */
 export let uploadPhotos = (files: File[], tags: string[], callback: (allImageData: IImageData[]) => void) => {
-  // we upload the photos individually so if one upload fails, the earlier uploads will still go through
-
-  let allPromises: Promise<any>[] = [];
+  let allPromises: Promise<AxiosResponse<any>>[] = [];
   files.forEach((file) => {
     let formData = new FormData();
     formData.append('file', file, file.name);

@@ -49,6 +49,9 @@ class App extends React.Component<IAppProps, IAppState> {
     );
   }
 
+  /**
+   * Creates the Image objects to be displayed
+   */
   generatePhotos(allImageData: IImageData[]): JSX.Element[] {
     let images: JSX.Element[] = [];
     for (let i = 0; i < allImageData.length; i++) {

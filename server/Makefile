@@ -7,6 +7,8 @@ list-buckets:
 list-bucket-objects:
 	aws --endpoint-url=http://localhost:4566 s3 ls monsterhouse
 clean:
+	# This deletes all of the data from the localstack environment. You will have to restart
+	# the docker container to continue after running this command
 	rm -rf ./data/data
 run:
 	go run main.go

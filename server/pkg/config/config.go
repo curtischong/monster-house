@@ -6,6 +6,8 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+// This package is used to read the config and secrets file for the server
+
 type AWSConfig struct {
 	S3BucketName string `yaml:"s3BucketName"`
 	S3Endpoint   string `yaml:"s3Endpoint"`
@@ -35,6 +37,7 @@ type SecretsConfig struct {
 	ImaggaSecret string `yaml:"imaggaSecret"`
 }
 
+// NewConfig returns a config object for a given config and secrets path
 func NewConfig(
 	configPath, secretsPath string,
 ) (*Config, error) {

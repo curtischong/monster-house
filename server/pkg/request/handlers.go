@@ -17,8 +17,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: Fix up request handling
-// https://stackoverflow.com/questions/43799703/how-to-do-error-http-error-handling-in-go-language
 type RequestHandler struct {
 	config         *config.Config
 	s3Client       *storage.S3Client
@@ -37,33 +35,54 @@ func NewRequestHandler(
 	}
 }
 
+// HandleGetPhotos fetches the photos that have at least 1 matching tag in the query
 func (handler *RequestHandler) HandleGetPhotos(
 	w http.ResponseWriter, r *http.Request,
 ) {
-	// TODO(Curtis): put this validation code into a validator function
 	query := r.URL.Query()["query"]
 	log.Infof("Fetching photos with query=%s", query)
+
+	// validate that the query is valid
 	if len(query) != 1 {
 		handler.sendStatusBadRequest(w, fmt.Errorf("multiple queries found in query"))
 		return
 	}
-	tags := strings.Split(query[0], ",")
 
+	tags := strings.Split(query[0], ",")
+	// Now find the photos that have at least 1 matching tag
+	matchingPhotoIDs, err := handler.findPhotosIDsWithTags(tags)
+	if err != nil {
+		handler.sendInternalServerError(w, err)
+		return
+	}
+	handler.writePhotoResponseDataFromPhotoIDs(w, matchingPhotoIDs)
+}
+
+// findPhotosIDsWithTags returns a slice of photoIDs that have at least 1 tag
+// in the slice of tags (this is an OR operation not AND)
+func (handler *RequestHandler) findPhotosIDsWithTags(
+	tags []string,
+) ([]uuid.UUID, error) {
+	// Note: Since a photo might have multiple tags that match,
+	// so we have to be careful to not double count each photoID.
+	// To account for this, we are using a map to act as a "set"
 	photosIDsFound := make(map[uuid.UUID]bool, 0)
 	for _, tag := range tags {
-		photoIDs, err := handler.postgresClient.QueryAllPhotosWithTag(tag)
+		trimmedTag := strings.TrimSpace(tag)
+		photoIDs, err := handler.postgresClient.QueryAllPhotosWithTag(trimmedTag)
 		if err != nil {
-			handler.sendInternalServerError(w, err)
-			return
+			return nil, err
 		}
 		for _, photoID := range photoIDs {
+			// If the photoID was already in the photosIDsFound map, this will do nothing
+			// since the photo was already matched!
 			photosIDsFound[photoID] = true
 		}
 	}
-	photoIDs := utils.GetArrayOfUUIDFromMapOfUUID(photosIDsFound)
-	handler.writePhotoResponseDataFromPhotoIDs(w, photoIDs)
+	return utils.GetArrayOfUUIDFromMapOfUUID(photosIDsFound), nil
 }
 
+// HandleGetAllPhotos fetches all photos stored in the repository
 func (handler *RequestHandler) HandleGetAllPhotos(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -71,28 +90,33 @@ func (handler *RequestHandler) HandleGetAllPhotos(
 	allPhotoIDs, err := handler.postgresClient.QueryAllPhotoIDs()
 	if err != nil {
 		handler.sendInternalServerError(w, err)
+		return
 	}
 	handler.writePhotoResponseDataFromPhotoIDs(w, allPhotoIDs)
 }
 
+// writePhotoResponseDataFromPhotoIDs fetches the response data for each photoID
+// and marshals it into a response for the client
 func (handler *RequestHandler) writePhotoResponseDataFromPhotoIDs(
 	w http.ResponseWriter,
 	photoIDs []uuid.UUID,
 ) {
 	allPhotos := make([]common.PhotoReponseData, 0, len(photoIDs))
 	for _, photoID := range photoIDs {
-		photoReponseData, err := handler.getPhotoReponseData(photoID)
+		photoReponseData, err := handler.getPhotoResponseData(photoID)
 		if err != nil {
 			handler.sendInternalServerError(w, err)
+			return
 		}
 		allPhotos = append(allPhotos, photoReponseData)
 	}
+	handler.sendStatusOK(w)
 	fileUrlsBytes, _ := json.Marshal(allPhotos)
-	handler.sendStandardHeaders(w)
 	w.Write(fileUrlsBytes)
 }
 
-func (handler *RequestHandler) getPhotoReponseData(
+// getPhotoResponseData fetches metadata for the photoID from the DB and returns the data as a PhotoReponseData object
+func (handler *RequestHandler) getPhotoResponseData(
 	photoID uuid.UUID,
 ) (common.PhotoReponseData, error) {
 	fileUrl := fmt.Sprintf("%s/%s/%s", handler.config.AWSConfig.S3Endpoint,
@@ -110,7 +134,7 @@ func (handler *RequestHandler) getPhotoReponseData(
 	}, nil
 }
 
-// from: https://stackoverflow.com/questions/40684307/how-can-i-receive-an-uploaded-file-using-a-golang-net-http-server
+// HandleUpload saves the uploaded file into s3, generates tags for the photo, and saves the tags into the DB
 func (handler *RequestHandler) HandleUpload(
 	w http.ResponseWriter, r *http.Request,
 ) {
@@ -138,19 +162,20 @@ func (handler *RequestHandler) HandleUpload(
 		return
 	}
 
+	// 4. Calculate the tags from the image
 	userTags, err := handler.parseTagsFromRequest(r)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
 		return
 	}
 
-	// 4. Fetch the calculated tags from imagga
 	generatedTags, err := handler.imaggaClient.GetTagsForPhoto(photoID)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
 		return
 	}
 
+	// 5. Insert the tag information into the DB
 	userTagIDs, err := handler.insertTagsAndGetTagIDs(userTags)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
@@ -163,23 +188,26 @@ func (handler *RequestHandler) HandleUpload(
 		return
 	}
 
-	// 5. store the photo-tag associations
+	// 6. store the photo-tag associations in the DB
 	err = handler.postgresClient.InsertPhotoTags(photoID, userTagIDs, false)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
+		return
 	}
-	// 6. store the generated photo-tag associations
 	err = handler.postgresClient.InsertPhotoTags(photoID, generatedTagIDs, true)
 	if err != nil {
 		handler.sendInternalServerError(w, err)
+		return
 	}
+
+	handler.sendStatusOK(w)
 	return
 }
 
 func (handler *RequestHandler) parseFile(
 	r *http.Request,
 ) (file multipart.File, fileName, fileType string, err error) {
-
+	// from: https://stackoverflow.com/questions/40684307/how-can-i-receive-an-uploaded-file-using-a-golang-net-http-server
 	r.ParseMultipartForm(32 << 20) // limit your max input length!
 	file, header, err := r.FormFile("file")
 	if err != nil {
@@ -220,33 +248,5 @@ func (handler *RequestHandler) insertTagsAndGetTagIDs(
 		}
 		tagIDs = append(tagIDs, tagID)
 	}
-	return
-}
-
-func (handler *RequestHandler) sendStandardHeaders(
-	w http.ResponseWriter,
-) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("X-Content-Type-Options", "nosniff")
-}
-
-func (handler *RequestHandler) sendInternalServerError(
-	w http.ResponseWriter,
-	err error,
-) {
-	handler.sendStandardHeaders(w)
-	log.Error(err)
-	w.WriteHeader(http.StatusInternalServerError)
-	return
-}
-
-func (handler *RequestHandler) sendStatusBadRequest(
-	w http.ResponseWriter,
-	err error,
-) {
-	handler.sendStandardHeaders(w)
-	log.Error(err)
-	w.WriteHeader(http.StatusBadRequest)
 	return
 }
