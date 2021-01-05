@@ -26,6 +26,7 @@ func NewPostgresClient(
 	if err != nil {
 		log.Fatalf("cannot instantiate DB client, err=%s", err)
 	}
+	// We want to share one DB client across all queries.
 	client.db = db
 	return &client
 }
@@ -47,6 +48,7 @@ func (client *PostgresClient) QueryAllPhotoIDs() (allIDs []uuid.UUID, err error)
 		}
 		allIDs = append(allIDs, photoID)
 	}
+	err = tx.Commit()
 	return
 }
 
@@ -80,6 +82,7 @@ func (client *PostgresClient) QueryAllTagsForPhoto(
 		}
 		allTags = append(allTags, tagResponseData)
 	}
+	err = tx.Commit()
 	return
 }
 
@@ -108,6 +111,7 @@ func (client *PostgresClient) QueryAllPhotosWithTag(
 		}
 		photos = append(photos, photoID)
 	}
+	err = tx.Commit()
 	return
 }
 
