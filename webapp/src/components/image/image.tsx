@@ -19,13 +19,13 @@ export const Image = (props: IImageProps) => {
 
     tags.push(
       <div key={i} className={className}>
-        {Name}
+        <p className="tag-text">{Name}</p>
       </div>,
     );
   }
   return (
     <div className="image-container">
-      <img src={props.imageData.Url} alt="aimage" width="300" />
+      <img className="image" src={props.imageData.Url} alt="aimage" width="300" />
       <div className="tags-container">{tags}</div>
     </div>
   );

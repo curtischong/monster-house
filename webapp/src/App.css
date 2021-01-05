@@ -1,9 +1,14 @@
+* {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 300;
+}
+
 .App {
   text-align: center;
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: #0984e3;
   min-height: 5vh;
   display: flex;
   flex-direction: column;
@@ -13,9 +18,27 @@
   color: white;
 }
 
+.App-title {
+  margin-bottom: 10px;
+}
+
+.App-catchphrase {
+  margin-top: 0px;
+}
+
 .images-container {
   display: flex;
   justify-content: center;
   flex-wrap: wrap;
   align-items: center;
+}
+
+.interact-con {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.interact-con>* {
+  margin: 10px;
 }

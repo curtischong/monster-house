@@ -8,3 +8,5 @@ list-bucket-objects:
 	aws --endpoint-url=http://localhost:4566 s3 ls monsterhouse
 clean:
 	rm -rf ./data/data
+run:
+	go run main.go

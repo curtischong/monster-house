@@ -1,6 +1,7 @@
 import React from 'react';
 import { IImageData } from '../../common';
 import { getAllPhotos, getPhotos } from '../../request';
+import './search-field.css';
 
 interface ISearchFieldProps {
   setPhotos(allImageData: IImageData[]): void;
@@ -34,7 +35,7 @@ export class SearchField extends React.Component<ISearchFieldProps, ISearchField
 
   render() {
     return (
-      <div className="bp3-input-group">
+      <div className="bp3-input-group search-field">
         <span className="bp3-icon bp3-icon-search"></span>
         <input
           className="bp3-input"

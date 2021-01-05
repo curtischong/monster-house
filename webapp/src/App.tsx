@@ -32,13 +32,16 @@ class App extends React.Component<IAppProps, IAppState> {
     return (
       <div className="App">
         <header className="App-header">
-          <h1>Monster House</h1>
+          <h1 className="App-title">Monster House</h1>
+          <h6 className="App-catchphrase">Tag and Search All Your Photos</h6>
         </header>
         <div>
-          <Button text="Upload photos" onClick={this.toggleOverlay} />
-          <SearchField setPhotos={this.setPhotos} />
+          <div className="interact-con">
+            <Button className="upload-button" text="Upload photos" onClick={this.toggleOverlay} />
+            <SearchField setPhotos={this.setPhotos} />
+          </div>
           <Dialog isOpen={isUploadOverlayOpen} onClose={this.toggleOverlay}>
-            <UploadForm onClose={this.toggleOverlay} />
+            <UploadForm onClose={this.toggleOverlay} setPhotos={this.setPhotos} />
           </Dialog>
         </div>
         <div className="images-container">{photos}</div>

@@ -25,6 +25,8 @@ func main() {
 	http.HandleFunc("/upload", requestHandler.HandleUpload)
 	log.Info("Starting server on port 8090")
 
+	// consider pinging the ngrok connection to verify that the proper config is up
+	// But if this was a real project, I'd probably have a custom proxy so we won't have to config ngrok when developing
 	err = http.ListenAndServe(":8090", nil)
 	if err != nil {
 		log.Fatalf("Cannot start server err=%s", err)

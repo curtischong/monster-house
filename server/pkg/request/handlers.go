@@ -42,6 +42,7 @@ func (handler *RequestHandler) HandleGetPhotos(
 ) {
 	// TODO(Curtis): put this validation code into a validator function
 	query := r.URL.Query()["query"]
+	log.Infof("Fetching photos with query=%s", query)
 	if len(query) != 1 {
 		handler.sendStatusBadRequest(w, fmt.Errorf("multiple queries found in query"))
 		return
@@ -66,6 +67,7 @@ func (handler *RequestHandler) HandleGetPhotos(
 func (handler *RequestHandler) HandleGetAllPhotos(
 	w http.ResponseWriter, r *http.Request,
 ) {
+	log.Info("Fetching all photos")
 	allPhotoIDs, err := handler.postgresClient.QueryAllPhotoIDs()
 	if err != nil {
 		handler.sendInternalServerError(w, err)

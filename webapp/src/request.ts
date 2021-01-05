@@ -37,16 +37,24 @@ export let getAllPhotos = (callback: (allImageData: IImageData[]) => void) => {
     );
 };
 
-export let uploadPhotos = (files: File[], tags: string[]) => {
+export let uploadPhotos = (files: File[], tags: string[], callback: (allImageData: IImageData[]) => void) => {
   // we upload the photos individually so if one upload fails, the earlier uploads will still go through
+
+  let allPromises: Promise<any>[] = [];
   files.forEach((file) => {
     let formData = new FormData();
     formData.append('file', file, file.name);
     formData.append('tags', JSON.stringify(tags));
-    axios.post(baseURL + 'upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    allPromises.push(
+      axios.post(baseURL + 'upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }),
+    );
+  });
+
+  Promise.all(allPromises).then(() => {
+    getAllPhotos(callback);
   });
 };

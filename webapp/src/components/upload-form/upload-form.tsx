@@ -2,8 +2,11 @@ import React from 'react';
 import ImageUploader from 'react-images-upload';
 import { Button, TagInput, AnchorButton } from '@blueprintjs/core';
 import { uploadPhotos } from '../../request';
+import { IImageData } from '../../common';
+import './upload-form.css';
 
 interface IUploadFormProps {
+  setPhotos(allImageData: IImageData[]): void;
   onClose: () => void;
 }
 interface IUploadFormState {
@@ -54,7 +57,7 @@ export class UploadForm extends React.Component<IUploadFormProps, IUploadFormSta
   onSubmit() {
     const tags = this.getTags();
     this.handleClearTags();
-    uploadPhotos(this.state.pictures, tags);
+    uploadPhotos(this.state.pictures, tags, this.props.setPhotos);
     this.props.onClose();
   }
 
@@ -63,21 +66,28 @@ export class UploadForm extends React.Component<IUploadFormProps, IUploadFormSta
     return (
       <>
         <ImageUploader
+          className="image-uploader"
           withIcon={true}
           withPreview={true}
           buttonText="Choose images"
           onChange={this.onDrop}
-          imgExtension={['.jpg', '.gif', '.png', '.gif']}
+          imgExtension={['.jpg', '.jpeg', '.gif', '.png']}
           maxFileSize={5242880}
           singleImage={false}
         />
         <TagInput
+          className="tag-input"
           onChange={this.handleChangeTags}
-          placeholder="Separate values with commas..."
+          placeholder="Separate tags with commas..."
           rightElement={this.clearButton()}
           values={tags}
         />
-        <AnchorButton className="pt-button pt-intent-success" onClick={this.onSubmit} text="Upload" type="submit" />
+        <AnchorButton
+          className="pt-button pt-intent-success submit-image-button"
+          onClick={this.onSubmit}
+          text="Upload"
+          type="submit"
+        />
       </>
     );
   }

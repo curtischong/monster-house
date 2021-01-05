@@ -1,0 +1,18 @@
+.image-uploader {
+    margin-top: 0px;
+}
+
+.image-uploader>.fileContainer {
+    margin-top: 0px;
+}
+
+.tag-input {
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
+.submit-image-button {
+    width: 200px;
+    margin: 0px auto;
+    margin-top: 10px;
+}
